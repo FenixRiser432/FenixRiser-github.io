@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de l'argent et des dépenses</title>
+    <style>
+        /* Style global */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2b2b2b;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1, h2 {
+            color: #ffffff;
+            margin: 20px 0;
+        }
+
+        .form-section, .table-container {
+            background-color: #3a3a3a;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 80%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label, select, input, button {
+            margin-bottom: 10px;
+        }
+
+        label, select, input {
+            flex: 1;
+            margin-right: 15px;
+            color: #cccccc;
+        }
+
+        select, input {
+            background-color: #555555;
+            border: none;
+            border-radius: 10px;
+            padding: 8px;
+            color: #ffffff;
+        }
+
+        button {
+            background-color: #5a5a5a;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #737373;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #555555;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #444444;
+        }
+
+        td {
+            background-color: #3a3a3a;
+        }
+
+        .total, .final-balance {
+            background-color: #555555;
+            font-weight: bold;
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background-color: #ff6666;
+        }
+
+        .save-btn {
+            margin-top: 20px;
+            background-color: #4caf50;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #66bb6a;
+        }
+
+        .save-image-btn {
+            margin-top: 10px;
+            background-color: #2196f3;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .save-image-btn:hover {
+            background-color: #42a5f5;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Gestion de l'argent et des dépenses</h1>
+
+<!-- Formulaire pour ajouter des transactions -->
+<div class="form-section">
+    <label for="category">Catégorie :</label>
+    <select id="category">
+        <option value="revenus">Revenus</option>
+        <option value="courses">Courses</option>
+        <option value="essence">Essence</option>
+        <option value="loisir">Loisir</option>
+        <option value="santé">Santé</option>
+        <option value="logement">Logement</option>
+        <option value="autres">Autres Dépenses</option>
+    </select>
+
+    <label for="description">Description :</label>
+    <input type="text" id="description" placeholder="Description">
+
+    <label for="amount">Montant (€) :</label>
+    <input type="number" id="amount" placeholder="Montant">
+
+    <button onclick="addTransaction()">Ajouter</button>
+</div>
+
+<!-- Tableaux des différentes catégories -->
+<div id="tables-container">
+    <!-- Les tableaux pour chaque catégorie seront générés ici -->
+</div>
+
+<!-- Solde final -->
+<div class="table-container">
+    <h2>Solde Final</h2>
+    <table>
+        <tfoot>
+            <tr>
+                <td class="final-balance">Solde Total (€)</td>
+                <td id="final-balance">0</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<!-- Bouton pour sauvegarder les données -->
+<button class="save-btn" onclick="saveData()">Sauvegarder</button>
+<button class="save-image-btn" onclick="saveAsImage()">Enregistrer en Image</button>
+
+<script>
+    const categories = {
+        revenus: [],
+        courses: [],
+        essence: [],
+        loisir: [],
+        santé: [],
+        logement: [],
+        autres: []
+    };
+
+    function addTransaction() {
+        const category = document.getElementById('category').value;
+        const description = document.getElementById('description').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const date = new Date().toISOString().split('T')[0];
+
+        if (description && !isNaN(amount)) {
+            const transaction = { date, description, amount };
+            categories[category].push(transaction);
+            updateTables();
+            updateFinalBalance();
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+        }
+    }
+
+    function deleteTransaction(category, index) {
+        categories[category].splice(index, 1);
+        updateTables();
+        updateFinalBalance();
+    }
+
+    function updateTables() {
+        const container = document.getElementById('tables-container');
+        container.innerHTML = '';
+
+        for (const [category, transactions] of Object.entries(categories)) {
+            const tableContainer = document.createElement('div');
+            tableContainer.className = 'table-container';
+
+            const h2 = document.createElement('h2');
+            h2.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+            tableContainer.appendChild(h2);
+
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+            const tfoot = document.createElement('tfoot');
+
+            thead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Montant (€)</th>
+                    <th>Actions</th>
+                </tr>
+            `;
+
+            let total = 0;
+
+            transactions.forEach((transaction, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${transaction.date}</td>
+                    <td>${transaction.description}</td>
+                    <td>${transaction.amount.toFixed(2)}</td>
+                    <td><button class="delete-btn" onclick="deleteTransaction('${category}', ${index})">Supprimer</button></td>
+                `;
+                tbody.appendChild(row);
+                total += transaction.amount;
+            });
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2" class="total">Total ${category.charAt(0).toUpperCase() + category.slice(1)}</td>
+                    <td class="total">${total.toFixed(2)}</td>
+                    <td></td>
+                </tr>
+            `;
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            table.appendChild(tfoot);
+
+            tableContainer.appendChild(table);
+            container.appendChild(tableContainer);
+        }
+    }
+
+    function updateFinalBalance() {
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        for (const [category, transactions] of Object.entries(categories)) {
+            const total = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+            if (category === 'revenus') {
+                totalIncome += total;
+            } else {
+                totalExpense += total;
+            }
+        }
+
+        const finalBalance = totalIncome - totalExpense;
+        document.getElementById('final-balance').textContent = finalBalance.toFixed(2);
+    }
+
+    function saveData() {
+        const data = JSON.stringify(categories);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'finance_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function saveAsImage() {
+        html2canvas(document.body).then(function(canvas) {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL();
+            a.download = 'finance_screenshot.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }
+
+    // Initialiser les tableaux au chargement de la page
+    updateTables();
+    updateFinalBalance();
+</script>
+<!-- Inclusion de la bibliothèque html2canvas -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+</body>
+</html>
